@@ -1,0 +1,24 @@
+{
+  "name":        "simplifye/tapup",
+  "description": "CME - Sender",
+  "version":     "1.0.0",
+  "keywords":    ["CME", "Campaigns Made Easy"],
+  "homepage":    "http://simplifye.com/cme",
+  "license":     "BSD-3-Clause",
+  "authors":     [
+    {
+      "name":     "Okechukwu Ugwu",
+      "email":    "oke.ugwu@simplifye.com",
+      "homepage": "http://www.fobilow.com"
+    }
+  ],
+  "require":     {
+    "rmccue/requests":   "*",
+    "nette/mail":        "2.2.1"
+  },
+  "autoload":    {
+    "psr-0": {
+      "Cme\\": "src/"
+    }
+  }
+}
