@@ -5,9 +5,6 @@
 
 namespace Cme\Commands;
 
-use \Nette\Mail\Message;
-use Simplon\Mysql\Mysql;
-
 abstract class Command
 {
   public $commandName;
@@ -17,11 +14,11 @@ abstract class Command
   protected function _createPIDFile($instId)
   {
     $pid       = getmypid();
-    $monitFile = 'monit/' . $this->commandName
-      . '/' . $this->_getInstanceName($instId) . '.pid';
-    if(!file_exists($monitFile))
+    $monitDir  = 'monit/' . $this->commandName;
+    $monitFile = $monitDir . '/' . $this->_getInstanceName($instId) . '.pid';
+    if(!file_exists($monitDir))
     {
-      mkdir('monit/' . $this->commandName);
+      mkdir($monitDir);
     }
     return (bool)file_put_contents($monitFile, $pid);
   }

@@ -34,7 +34,7 @@ class SendEmails extends Command
         //read jobs from queue
         $query = $this->_dbConn->query(
           sprintf(
-            'SELECT * FROM %s WHERE locked_by=%s AND status=%s ORDER BY priority DESC LIMIT %d',
+            'SELECT * FROM %s WHERE locked_by="%s" AND status="%s" ORDER BY send_priority DESC LIMIT %d',
             $this->_queueTable,
             $instanceName,
             'pending',
@@ -42,13 +42,14 @@ class SendEmails extends Command
           )
         );
 
-        $messages = $query->fetch_object();
-
+        $messages = $query->fetch_all(MYSQL_ASSOC);
         if($messages)
         {
           //process it
           foreach($messages as $message)
           {
+            //trick to convert message from an array to an object
+            $message = json_decode(json_encode($message));
             //send email
             $emailSent = $this->sendEmail(
               $message->to,
@@ -58,9 +59,9 @@ class SendEmails extends Command
             );
 
             //unlock message and set the appropriate status
-            $status = ($emailSent) ? 'sent' : 'failed';
+            $status = ($emailSent) ? 'Sent' : 'Failed';
             $sql    = sprintf(
-              "UPDATE %s SET locked_by=NULL, status=%s
+              "UPDATE %s SET locked_by=NULL, status='%s'
               WHERE id=%d",
               $this->_queueTable,
               $status,
@@ -68,23 +69,36 @@ class SendEmails extends Command
             );
             $this->_dbConn->query($sql);
             //update analytics
+            //most provider expect you to send an email every second.
+            //So lets sleep for 1 sec
+            sleep(1);
           }
         }
         else
         {
+          echo "Locking some rows" . PHP_EOL;
           //lock some messages
           $sql = sprintf(
-            "UPDATE %s SET locked_by=%s
-            WHERE locked_by=NULL
+            "UPDATE %s SET locked_by='%s'
+            WHERE locked_by IS NULL
             AND send_time < %d
-            AND status=%s
-            ORDER BY priority DESC",
+            AND status='%s'
+            ORDER BY send_priority DESC
+            LIMIT %d",
             $this->_queueTable,
             $instanceName,
             time(),
-            'pending'
+            'Pending',
+            $this->batchSize
           );
           $this->_dbConn->query($sql);
+          //if process could not lock any rows. Lets take a break
+          //to avoid overloading the server
+          if($this->_dbConn->affected_rows == 0)
+          {
+            sleep(5);
+            echo date('Y-m-d H:i:s') . ": Sleeping for a bit" . PHP_EOL;
+          }
         }
       };
     }
@@ -127,17 +141,19 @@ class SendEmails extends Command
       {
         $mailer = new SmtpMailer(
           [
-          'host'     => $this->_config['smtp']['host'],
-          'username' => $this->_config['smtp']['username'],
-          'password' => $this->_config['smtp']['password'],
-          'port'     => $this->_config['smtp']['port']
+            'host'     => $this->_config['smtp']['host'],
+            'username' => $this->_config['smtp']['username'],
+            'password' => $this->_config['smtp']['password'],
+            'port'     => $this->_config['smtp']['port']
           ]
         );
+        echo "Sending to $to" . PHP_EOL;
         $mailer->send($mail);
         $return = true;
       }
       catch(\Exception $e)
       {
+        echo $e->getMessage() . PHP_EOL;
         $return = false;
       }
 
