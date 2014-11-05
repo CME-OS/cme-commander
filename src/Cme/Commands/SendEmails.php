@@ -72,6 +72,19 @@ class SendEmails extends Command
             //most provider expect you to send an email every second.
             //So lets sleep for 1 sec
             sleep(1);
+
+            $sql = $this->_dbConn->query(
+              sprintf(
+                "INSERT INTO campaign_events (campaign_id, list_id, subscriber_id, event_type, time)
+                VALUES (%d, %d, %d, '%s', %d)",
+                $message->campaign_id,
+                $message->list_id,
+                $message->subscriber_id,
+                strtolower($status),
+                time()
+              )
+            );
+            $this->_dbConn->query($sql);
           }
         }
         else
@@ -120,6 +133,10 @@ class SendEmails extends Command
           $this->_config['database']['password'],
           $this->_config['database']['database']
         );
+        if(!$this->_dbConn->ping())
+        {
+          die("Could not connect to datbase. Check your config please");
+        }
       }
       else
       {
@@ -141,10 +158,10 @@ class SendEmails extends Command
       {
         $mailer = new SmtpMailer(
           [
-            'host'     => $this->_config['smtp']['host'],
-            'username' => $this->_config['smtp']['username'],
-            'password' => $this->_config['smtp']['password'],
-            'port'     => $this->_config['smtp']['port']
+          'host'     => $this->_config['smtp']['host'],
+          'username' => $this->_config['smtp']['username'],
+          'password' => $this->_config['smtp']['password'],
+          'port'     => $this->_config['smtp']['port']
           ]
         );
         echo "Sending to $to" . PHP_EOL;
