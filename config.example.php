@@ -8,7 +8,8 @@ $config = [
     'engine'   => '',
     'host'     => '',
     'username' => '',
-    'password' => ''
+    'password' => '',
+    'database' => ''
   ],
   'smtp'     => [
     'host'     => '',
