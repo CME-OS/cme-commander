@@ -153,7 +153,7 @@ class SendEmails extends Command
       $mail->setFrom($from)
         ->addTo($to)
         ->setSubject($subject)
-        ->setBody($body);
+        ->setHtmlBody($body);
       try
       {
         $mailer = new SmtpMailer(
