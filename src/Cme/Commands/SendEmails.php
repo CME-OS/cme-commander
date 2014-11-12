@@ -180,6 +180,7 @@ class SendEmails extends Command
         $return = false;
       }
 
+      $this->_mailer->clearAddresses();
       return $return;
     }
     else
