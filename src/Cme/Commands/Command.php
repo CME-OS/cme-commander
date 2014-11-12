@@ -13,14 +13,21 @@ abstract class Command
 
   protected function _createPIDFile($instId)
   {
-    $pid       = getmypid();
-    $monitDir  = 'monit/' . $this->commandName;
-    $monitFile = $monitDir . '/' . $this->_getInstanceName($instId) . '.pid';
-    if(!file_exists($monitDir))
+    if($instId)
     {
-      mkdir($monitDir);
+      $pid       = getmypid();
+      $monitDir  = 'monit/' . $this->commandName;
+      $monitFile = $monitDir . '/' . $instId . '.pid';
+      if(!file_exists($monitDir))
+      {
+        mkdir($monitDir);
+      }
+      return (bool)file_put_contents($monitFile, $pid);
     }
-    return (bool)file_put_contents($monitFile, $pid);
+    else
+    {
+      throw new \Exception("You must specify an instance ID");
+    }
   }
 
   protected function _getInstanceName($instId)
