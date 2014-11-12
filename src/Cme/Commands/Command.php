@@ -8,6 +8,7 @@ namespace Cme\Commands;
 abstract class Command
 {
   public $commandName;
+  public $baseDir;
 
   abstract public function run();
 
@@ -16,7 +17,7 @@ abstract class Command
     if($instId)
     {
       $pid       = getmypid();
-      $monitDir  = 'monit/' . $this->commandName;
+      $monitDir  = $this->baseDir . '/monit/' . $this->commandName;
       $monitFile = $monitDir . '/' . $instId . '.pid';
       if(!file_exists($monitDir))
       {

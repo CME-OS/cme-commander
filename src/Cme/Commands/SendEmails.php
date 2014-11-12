@@ -24,6 +24,7 @@ class SendEmails extends Command
     //create PID file
     if($this->_createPIDFile($this->instId))
     {
+      error_log("PID file created");
       $this->_loadConfigs();
       //connect to db
       $this->_connectToDB();
@@ -177,6 +178,7 @@ class SendEmails extends Command
       else
       {
         echo $this->_mailer->ErrorInfo . PHP_EOL;
+        error_log($this->_mailer->ErrorInfo);
         $return = false;
       }
 
@@ -191,12 +193,15 @@ class SendEmails extends Command
 
   private function _loadConfigs()
   {
-    if(file_exists('config.php'))
+    $cmeConfig = $this->baseDir . '/config.php';
+    if(file_exists($cmeConfig))
     {
-      $this->_config = include 'config.php';
+      error_log("Loading config from " . $cmeConfig);
+      $this->_config = include $cmeConfig;
     }
     else
     {
+      error_log("Could not find config file");
       die("config.php file does not exist."
         . " This file is needed to read database and smtp configs");
     }
