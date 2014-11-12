@@ -5,8 +5,7 @@
 
 namespace Cme\Commands;
 
-use Nette\Mail\Message;
-use Nette\Mail\SmtpMailer;
+use PHPMailer;
 
 class SendEmails extends Command
 {
@@ -16,6 +15,7 @@ class SendEmails extends Command
   private $_dbConn;
   private $_config;
   private $_queueTable = 'message_queue';
+  private $_mailer;
   public $batchSize = 100;
   public $instId;
 
@@ -34,7 +34,8 @@ class SendEmails extends Command
         //read jobs from queue
         $query = $this->_dbConn->query(
           sprintf(
-            'SELECT * FROM %s WHERE locked_by="%s" AND status="%s" ORDER BY send_priority DESC LIMIT %d',
+            'SELECT * FROM %s WHERE locked_by="%s"
+            AND status ="%s" ORDER BY send_priority DESC LIMIT %d',
             $this->_queueTable,
             $instanceName,
             'pending',
@@ -53,7 +54,8 @@ class SendEmails extends Command
             //send email
             $emailSent = $this->sendEmail(
               $message->to,
-              $message->from,
+              $message->from_name,
+              $message->from_email,
               $message->subject,
               $message->html_content
             );
@@ -110,7 +112,7 @@ class SendEmails extends Command
           if($this->_dbConn->affected_rows == 0)
           {
             sleep(5);
-            echo date('Y-m-d H:i:s') . ": Sleeping for a bit" . PHP_EOL;
+            echo @date('Y-m-d H:i:s') . ": Sleeping for a bit" . PHP_EOL;
           }
         }
       };
@@ -145,32 +147,36 @@ class SendEmails extends Command
     }
   }
 
-  private function sendEmail($to, $from, $subject, $body)
+  private function sendEmail($to, $fromName, $fromEmail, $subject, $body)
   {
     if(isset($this->_config['smtp']))
     {
-      $mail = new Message();
-      $mail->setFrom($from)
-        ->addTo($to)
-        ->setSubject($subject)
-        ->setHtmlBody($body);
-      try
+      if($this->_mailer == null)
       {
-        $mailer = new SmtpMailer(
-          [
-          'host'     => $this->_config['smtp']['host'],
-          'username' => $this->_config['smtp']['username'],
-          'password' => $this->_config['smtp']['password'],
-          'port'     => $this->_config['smtp']['port']
-          ]
-        );
+        $this->_mailer = new PHPMailer();
+        $this->_mailer->isSMTP();
+        $this->_mailer->SMTPAuth   = true;
+        $this->_mailer->SMTPSecure = 'tls';
+        $this->_mailer->Host       = $this->_config['smtp']['host'];
+        $this->_mailer->Username   = $this->_config['smtp']['username'];
+        $this->_mailer->Password   = $this->_config['smtp']['password'];
+        $this->_mailer->Port       = $this->_config['smtp']['port'];
+      }
+
+      $this->_mailer->isHTML(true);
+      $this->_mailer->addAddress($to);
+      $this->_mailer->From     = $fromEmail;
+      $this->_mailer->FromName = $fromName;
+      $this->_mailer->Subject  = $subject;
+      $this->_mailer->Body     = $body;
+      if($this->_mailer->send())
+      {
         echo "Sending to $to" . PHP_EOL;
-        $mailer->send($mail);
         $return = true;
       }
-      catch(\Exception $e)
+      else
       {
-        echo $e->getMessage() . PHP_EOL;
+        echo $this->_mailer->ErrorInfo . PHP_EOL;
         $return = false;
       }
 
