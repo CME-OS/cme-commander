@@ -13,7 +13,6 @@
     }
   ],
   "require":     {
-    "rmccue/requests":     "*",
     "phpmailer/phpmailer": "5.2.9"
   },
   "autoload":    {
