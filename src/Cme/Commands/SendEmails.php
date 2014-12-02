@@ -29,6 +29,8 @@ class SendEmails extends Command
       //connect to db
       $this->_connectToDB();
       $instanceName = $this->_getInstanceName($this->instId);
+      // get data as utf8
+      $this->_dbConn->query('SET CHARACTER SET utf8');
 
       while(true)
       {
@@ -45,6 +47,7 @@ class SendEmails extends Command
         );
 
         $messages = $query->fetch_all(MYSQL_ASSOC);
+
         if($messages)
         {
           //process it
@@ -60,6 +63,8 @@ class SendEmails extends Command
               $message->subject,
               $message->html_content
             );
+            var_dump($emailSent);
+            var_dump($message);die;
 
             //unlock message and set the appropriate status
             $status = ($emailSent) ? 'Sent' : 'Failed';
