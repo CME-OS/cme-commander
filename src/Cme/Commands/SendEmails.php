@@ -64,8 +64,6 @@ class SendEmails extends Command
               $message->subject,
               $message->html_content
             );
-            var_dump($emailSent);
-            var_dump($message);die;
 
             if($lockedCampaignId == null)
             {
