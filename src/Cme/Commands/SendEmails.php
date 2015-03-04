@@ -16,6 +16,7 @@ class SendEmails extends Command
   private $_config;
   private $_queueTable = 'message_queue';
   private $_mailer;
+  private $_smtp = [];
   public $batchSize = 100;
   public $instId;
 
@@ -56,19 +57,21 @@ class SendEmails extends Command
           {
             //trick to convert message from an array to an object
             $message = json_decode(json_encode($message));
+
+            if($lockedCampaignId == null)
+            {
+              $lockedCampaignId = $message->campaign_id;
+            }
+
             //send email
             $emailSent = $this->sendEmail(
+              $lockedCampaignId,
               $message->to,
               $message->from_name,
               $message->from_email,
               $message->subject,
               $message->html_content
             );
-
-            if($lockedCampaignId == null)
-            {
-              $lockedCampaignId = $message->campaign_id;
-            }
 
             //unlock message and set the appropriate status
             $status = ($emailSent) ? 'Sent' : 'Failed';
@@ -81,9 +84,6 @@ class SendEmails extends Command
             );
             $this->_dbConn->query($sql);
             //update analytics
-            //most provider expect you to send an email every second.
-            //So lets sleep for 1 sec
-            sleep(1);
 
             $sql = $this->_dbConn->query(
               sprintf(
@@ -219,25 +219,28 @@ class SendEmails extends Command
       }
       else
       {
-        die("config.php file does not contain database config");
+        die("commander.config.php file does not contain database config");
       }
     }
   }
 
-  private function sendEmail($to, $fromName, $fromEmail, $subject, $body)
+  private function sendEmail(
+    $campaignId, $to, $fromName, $fromEmail, $subject, $body
+  )
   {
-    if(isset($this->_config['smtp']))
+    if($campaignId)
     {
+      $this->_loadSmtpConfig($campaignId);
       if($this->_mailer == null)
       {
         $this->_mailer = new PHPMailer();
         $this->_mailer->isSMTP();
         $this->_mailer->SMTPAuth   = true;
         $this->_mailer->SMTPSecure = 'tls';
-        $this->_mailer->Host       = $this->_config['smtp']['host'];
-        $this->_mailer->Username   = $this->_config['smtp']['username'];
-        $this->_mailer->Password   = $this->_config['smtp']['password'];
-        $this->_mailer->Port       = $this->_config['smtp']['port'];
+        $this->_mailer->Host       = $this->_smtp[$campaignId]['host'];
+        $this->_mailer->Username   = $this->_smtp[$campaignId]['username'];
+        $this->_mailer->Password   = $this->_smtp[$campaignId]['password'];
+        $this->_mailer->Port       = $this->_smtp[$campaignId]['port'];
       }
 
       $this->_mailer->isHTML(true);
@@ -263,13 +266,13 @@ class SendEmails extends Command
     }
     else
     {
-      die("config.php file does not contain smtp config");
+      die("I need a campaignId in order to load SMTP settings");
     }
   }
 
   private function _loadConfigs()
   {
-    $cmeConfig = $this->baseDir . '/config.php';
+    $cmeConfig = $this->baseDir . '/commander.config.php';
     if(file_exists($cmeConfig))
     {
       error_log("Loading config from " . $cmeConfig);
@@ -278,8 +281,67 @@ class SendEmails extends Command
     else
     {
       error_log("Could not find config file");
-      die("config.php file does not exist."
-        . " This file is needed to read database and smtp configs");
+      die("commander.config.php file does not exist."
+        . " This file is needed to read database configs");
+    }
+  }
+
+  private function _loadSmtpConfig($campaignId)
+  {
+    if(!isset($this->_smtp[$campaignId]))
+    {
+      /**
+       * Grab SMTP details
+       *
+       * First we grab the smtp_provider_id
+       **/
+      $query = $this->_dbConn->query(
+        sprintf(
+          'SELECT smtp_provider_id as id FROM %s WHERE id="%d"',
+          'campaigns',
+          $campaignId
+        )
+      );
+
+      //then we grab the full details of that SMTP provider by
+      //query smtp_providers table with id gotten from above
+      $campaignSmtpProvider = $query->fetch_object();
+      $smtpProviderId       = $campaignSmtpProvider->id;
+      if($smtpProviderId)
+      {
+        $query = $this->_dbConn->query(
+          sprintf(
+            'SELECT * FROM %s WHERE id="%d"',
+            'smtp_providers',
+            $smtpProviderId
+          )
+        );
+      }
+      else
+      {
+        //get default one smtp provider instead
+        $query = $this->_dbConn->query(
+          sprintf(
+            'SELECT * FROM %s WHERE default=1 LIMIT 1',
+            'smtp_providers'
+          )
+        );
+      }
+      $smtpProvider = $query->fetch_object();
+      if($smtpProvider)
+      {
+        //cache it
+        $this->_smtp[$campaignId]['host']     = $smtpProvider->host;
+        $this->_smtp[$campaignId]['username'] = $smtpProvider->username;
+        $this->_smtp[$campaignId]['password'] = $smtpProvider->password;
+        $this->_smtp[$campaignId]['port']     = $smtpProvider->port;
+      }
+      else
+      {
+        throw new \Exception(
+          "No SMTP Provider set for campaignID " . $campaignId
+        );
+      }
     }
   }
 
