@@ -6,7 +6,13 @@ CMEDIR=`pwd`
 cd "$CWD"
 
 apt-get update
-apt-get -y install monit php5-cli php5-mysqlnd
+apt-get -y install monit php5-cli php5-mysqlnd php5-curl curl
+
+#install composer
+php -r "readfile('https://getcomposer.org/installer');" | php -- --install-dir=/home/ubuntu/
+
+#run composer update
+php /home/ubuntu/composer.phar install -d=/home/ubuntu/cme-commander
 
 cat <<EOF > /etc/monit/conf.d/cme
 check process SendEmails-Inst1
