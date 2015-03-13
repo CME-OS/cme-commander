@@ -6,7 +6,7 @@ CMEDIR=`pwd`
 cd "$CWD"
 
 apt-get update
-apt-get -y install monit php5-cli php5-mysqlnd php5-curl curl
+apt-get -y install monit php5-cli php5-mysqlnd php5-curl php5-mcrypt curl
 
 #install composer
 php -r "readfile('https://getcomposer.org/installer');" | php -- --install-dir=/home/ubuntu/
