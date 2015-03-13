@@ -323,12 +323,16 @@ class SendEmails extends Command
         //get default one smtp provider instead
         $query = $this->_dbConn->query(
           sprintf(
-            'SELECT * FROM %s WHERE default=1 LIMIT 1',
+            'SELECT * FROM %s WHERE `default`=1 LIMIT 1',
             'smtp_providers'
           )
         );
       }
-      $smtpProvider = $query->fetch_object();
+      $smtpProvider = false;
+      if($query)
+      {
+        $smtpProvider = $query->fetch_object();
+      }
       if($smtpProvider)
       {
         //cache it
