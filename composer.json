@@ -2,7 +2,10 @@
   "name":        "simplifye/tapup",
   "description": "CME - Sender",
   "version":     "1.0.0",
-  "keywords":    ["CME", "Campaigns Made Easy"],
+  "keywords":    [
+    "CME",
+    "Campaigns Made Easy"
+  ],
   "homepage":    "http://simplifye.com/cme",
   "license":     "BSD-3-Clause",
   "authors":     [
@@ -13,7 +16,8 @@
     }
   ],
   "require":     {
-    "phpmailer/phpmailer": "5.2.9"
+    "phpmailer/phpmailer":   "5.2.9",
+    "illuminate/encryption": "5.0.4"
   },
   "autoload":    {
     "psr-0": {

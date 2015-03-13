@@ -5,6 +5,7 @@
 
 namespace Cme\Commands;
 
+use Illuminate\Encryption\Encrypter;
 use PHPMailer;
 
 class SendEmails extends Command
@@ -331,9 +332,16 @@ class SendEmails extends Command
       if($smtpProvider)
       {
         //cache it
+        $crypt                                = new Encrypter(
+          $this->_config['key']
+        );
         $this->_smtp[$campaignId]['host']     = $smtpProvider->host;
-        $this->_smtp[$campaignId]['username'] = $smtpProvider->username;
-        $this->_smtp[$campaignId]['password'] = $smtpProvider->password;
+        $this->_smtp[$campaignId]['username'] = $crypt->decrypt(
+          $smtpProvider->username
+        );
+        $this->_smtp[$campaignId]['password'] = $crypt->decrypt(
+          $smtpProvider->password
+        );
         $this->_smtp[$campaignId]['port']     = $smtpProvider->port;
       }
       else
