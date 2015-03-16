@@ -232,33 +232,33 @@ class SendEmails extends Command
     if($campaignId)
     {
       $this->_loadSmtpConfig($campaignId);
-      $this->_mailer = new PHPMailer();
-      $this->_mailer->isSMTP();
-      $this->_mailer->SMTPAuth   = true;
-      $this->_mailer->SMTPSecure = 'tls';
-      $this->_mailer->Host       = $this->_smtp[$campaignId]['host'];
-      $this->_mailer->Username   = $this->_smtp[$campaignId]['username'];
-      $this->_mailer->Password   = $this->_smtp[$campaignId]['password'];
-      $this->_mailer->Port       = $this->_smtp[$campaignId]['port'];
-      $this->_mailer->isHTML(true);
-      $this->_mailer->addAddress($to);
-      $this->_mailer->From     = $fromEmail;
-      $this->_mailer->FromName = $fromName;
-      $this->_mailer->Subject  = $subject;
-      $this->_mailer->Body     = $body;
-      if($this->_mailer->send())
+      $mailer = new PHPMailer();
+      $mailer->isSMTP();
+      $mailer->SMTPAuth   = true;
+      $mailer->SMTPSecure = 'tls';
+      $mailer->Host       = $this->_smtp[$campaignId]['host'];
+      $mailer->Username   = $this->_smtp[$campaignId]['username'];
+      $mailer->Password   = $this->_smtp[$campaignId]['password'];
+      $mailer->Port       = $this->_smtp[$campaignId]['port'];
+      $mailer->isHTML(true);
+      $mailer->addAddress($to);
+      $mailer->From     = $fromEmail;
+      $mailer->FromName = $fromName;
+      $mailer->Subject  = $subject;
+      $mailer->Body     = $body;
+      if($mailer->send())
       {
         echo "Sending to $to" . PHP_EOL;
         $return = true;
       }
       else
       {
-        echo $this->_mailer->ErrorInfo . PHP_EOL;
-        error_log($this->_mailer->ErrorInfo);
+        echo $mailer->ErrorInfo . PHP_EOL;
+        error_log($mailer->ErrorInfo);
         $return = false;
       }
 
-      $this->_mailer->clearAddresses();
+      $mailer->clearAddresses();
       return $return;
     }
     else
