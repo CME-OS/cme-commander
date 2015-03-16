@@ -15,6 +15,12 @@ php -r "readfile('https://getcomposer.org/installer');" | php -- --install-dir=/
 #run composer update
 php /home/ubuntu/composer.phar install -d=/home/ubuntu/cme-commander
 
+#enable php.ini to log message to file
+cat <<EOF >> /etc/php5/cli/php.ini
+
+error_log = /var/log/php_error.log
+EOF
+
 cat <<EOF > /etc/monit/conf.d/cme
 check process SendEmails-Inst1
     with pidfile "$CMEDIR/monit/SendEmails/inst1.pid"
