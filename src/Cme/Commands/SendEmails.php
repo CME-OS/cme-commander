@@ -16,7 +16,6 @@ class SendEmails extends Command
   private $_dbConn;
   private $_config;
   private $_queueTable = 'message_queue';
-  private $_mailer;
   private $_smtp = [];
   public $batchSize = 100;
   public $instId;
@@ -216,7 +215,7 @@ class SendEmails extends Command
         );
         if(!$this->_dbConn->ping())
         {
-          die("Could not connect to datbase. Check your config please");
+          die("Could not connect to database. Check your config please");
         }
       }
       else
@@ -233,18 +232,14 @@ class SendEmails extends Command
     if($campaignId)
     {
       $this->_loadSmtpConfig($campaignId);
-      if($this->_mailer == null)
-      {
-        $this->_mailer = new PHPMailer();
-        $this->_mailer->isSMTP();
-        $this->_mailer->SMTPAuth   = true;
-        $this->_mailer->SMTPSecure = 'tls';
-        $this->_mailer->Host       = $this->_smtp[$campaignId]['host'];
-        $this->_mailer->Username   = $this->_smtp[$campaignId]['username'];
-        $this->_mailer->Password   = $this->_smtp[$campaignId]['password'];
-        $this->_mailer->Port       = $this->_smtp[$campaignId]['port'];
-      }
-
+      $this->_mailer = new PHPMailer();
+      $this->_mailer->isSMTP();
+      $this->_mailer->SMTPAuth   = true;
+      $this->_mailer->SMTPSecure = 'tls';
+      $this->_mailer->Host       = $this->_smtp[$campaignId]['host'];
+      $this->_mailer->Username   = $this->_smtp[$campaignId]['username'];
+      $this->_mailer->Password   = $this->_smtp[$campaignId]['password'];
+      $this->_mailer->Port       = $this->_smtp[$campaignId]['port'];
       $this->_mailer->isHTML(true);
       $this->_mailer->addAddress($to);
       $this->_mailer->From     = $fromEmail;
