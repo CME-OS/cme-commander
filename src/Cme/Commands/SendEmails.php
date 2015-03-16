@@ -137,6 +137,7 @@ class SendEmails extends Command
             }
           }
 
+          $sleep = true;
           if($lockedCampaignId)
           {
             echo "Locking some rows for campaign $lockedCampaignId" . PHP_EOL;
@@ -159,25 +160,25 @@ class SendEmails extends Command
             $this->_dbConn->query($sql);
             $sleep = ($this->_dbConn->affected_rows == 0);
           }
-          else
-          {
-            $sleep = true;
-          }
 
           //if process could not lock any rows. Lets take a break
           //to avoid overloading the server
           if($sleep)
           {
-            //set status of campaign to sending
-            $sql = sprintf(
-              "UPDATE campaigns SET `status`='%s'
+            if($lockedCampaignId)
+            {
+              //set status of campaign to sending
+              $sql = sprintf(
+                "UPDATE campaigns SET `status`='%s'
                WHERE id = %d",
-              'Sent',
-              $lockedCampaignId
-            );
-            $this->_dbConn->query($sql);
+                'Sent',
+                $lockedCampaignId
+              );
+              $this->_dbConn->query($sql);
 
-            $lockedCampaignId = null;
+              $lockedCampaignId = null;
+            }
+
             sleep(5);
             echo @date('Y-m-d H:i:s') . ": Sleeping for a bit" . PHP_EOL;
           }
@@ -291,6 +292,7 @@ class SendEmails extends Command
   {
     if(!isset($this->_smtp[$campaignId]))
     {
+      error_log("Loading SMTP config for campaign ID " . $campaignId);
       /**
        * Grab SMTP details
        *
@@ -347,6 +349,7 @@ class SendEmails extends Command
           $smtpProvider->password
         );
         $this->_smtp[$campaignId]['port']     = $smtpProvider->port;
+        error_log("Using " . $smtpProvider->name . " SMTP Provider");
       }
       else
       {
