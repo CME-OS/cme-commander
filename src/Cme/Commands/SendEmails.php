@@ -85,16 +85,14 @@ class SendEmails extends Command
             $this->_dbConn->query($sql);
             //update analytics
 
-            $sql = $this->_dbConn->query(
-              sprintf(
-                "INSERT INTO campaign_events (campaign_id, list_id, subscriber_id, event_type, time)
+            $sql = sprintf(
+              "INSERT INTO campaign_events (campaign_id, list_id, subscriber_id, event_type, time)
                 VALUES (%d, %d, %d, '%s', %d)",
-                $message->campaign_id,
-                $message->list_id,
-                $message->subscriber_id,
-                strtolower($status),
-                time()
-              )
+              $message->campaign_id,
+              $message->list_id,
+              $message->subscriber_id,
+              strtolower($status),
+              time()
             );
             $this->_dbConn->query($sql);
           }
